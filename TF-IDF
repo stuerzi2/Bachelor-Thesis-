@@ -1,0 +1,213 @@
+import math
+from nltk import sent_tokenize, word_tokenize, PorterStemmer
+from nltk.corpus import stopwords
+
+file_path = '\\Users\\luiss\\Desktop\\test.txt'
+open_text = open(file_path, "r", encoding='utf-8')
+text = open_text.read()
+sentences = sent_tokenize(text)  # NLTK function
+total_documents = len(sentences)
+print(sentences)
+
+""" TF-IDF stands for Term Frequency-Inverse Document Frequency. 
+    It is a numerical representation used to quantify the importance of a term in a document within a collection or corpus of documents. 
+    TF-IDF is commonly used in information retrieval and text mining tasks.
+
+    TF (Term Frequency) measures how frequently a term occurs in a document. 
+    It is calculated by dividing the number of times a term appears in a document by the total number of terms in the document. 
+    TF assigns higher weights to terms that appear more frequently in a document, assuming they are more important.
+
+    IDF (Inverse Document Frequency) measures the rarity or uniqueness of a term across the entire corpus. 
+    It is calculated by taking the logarithm of the ratio between the total number of documents in the corpus and the number of documents that contain the term. IDF assigns higher weights to terms that are less common in the corpus, assuming they are more informative.
+
+    The TF-IDF score for a term in a document is obtained by multiplying the TF value of the term in the document 
+    with the IDF value of the term in the corpus. 
+    The resulting score reflects the relative importance of the term in the document compared to the corpus.
+
+    TF-IDF helps in identifying important terms that are relevant to a specific document 
+    while downweighting common terms that occur frequently across the entire corpus. 
+    It is used in various text analysis tasks, such as information retrieval, document classification, and text summarization, 
+    to identify key terms and rank their importance. """
+
+""" TF-IDF (Term Frequency-Inverse Document Frequency) is a numerical representation technique used 
+    in information retrieval and text mining to evaluate the importance of terms in a document within a larger corpus.
+    TF-IDF combines two factors: term frequency (TF) and inverse document frequency (IDF).
+    Here's a step-by-step explanation of how TF-IDF works:
+
+1.  Term Frequency (TF): For a given term in a document, the term frequency measures how frequently that term appears in the document. 
+    It is calculated as the count of occurrences of the term divided by the total number of terms in the document.
+    The idea is that the more frequent a term is within a document, the more important it is to that document.
+
+2.  Inverse Document Frequency (IDF): The inverse document frequency measures the rarity or importance of 
+    a term in the entire corpus. It is calculated as the logarithm of the ratio of the total number of documents 
+    in the corpus to the number of documents that contain the term. The IDF is higher for terms that appear in fewer documents,
+    indicating that rare terms carry more information and are more valuable for distinguishing documents.
+    
+3.  TF-IDF Calculation: TF-IDF is computed by multiplying the term frequency (TF) of a term in a 
+    document by the inverse document frequency (IDF) of that term across the entire corpus. 
+    The TF-IDF score represents the relative importance of a term within a specific document and the entire corpus.
+    It is higher for terms that are frequent in a document but rare in the corpus.
+
+4.  Application: TF-IDF scores can be used for various purposes. In information retrieval, documents can be ranked based 
+    on their TF-IDF scores to match user queries. In text mining and text classification, 
+    TF-IDF is often used as a feature representation to capture the significance of terms in documents.
+
+    By considering both the local term frequency within a document (TF) and the global rarity 
+    of the term across the corpus (IDF), TF-IDF provides a way to assign weights to terms that 
+    reflect their relative importance in a document and the entire corpus. 
+    This weighting scheme helps in identifying important and distinguishing terms in a document collection."""
+
+def _create_frequency_matrix(sentences):
+    frequency_matrix = {}
+    stopWords = set(stopwords.words("english"))
+    ps = PorterStemmer()
+
+    for sent in sentences:
+        freq_table = {}
+        words = word_tokenize(sent)
+        for word in words:
+            word = word.lower()
+            word = ps.stem(word)
+            if word in stopWords:
+                continue
+
+            if word in freq_table:
+                freq_table[word] += 1
+            else:
+                freq_table[word] = 1
+
+        frequency_matrix[sent[:15]] = freq_table
+    print(frequency_matrix)
+    return frequency_matrix
+
+
+Result_1 = _create_frequency_matrix(sentences)
+
+
+def _create_tf_matrix(freq_matrix):
+    tf_matrix = {}
+
+    for sent, f_table in freq_matrix.items():
+        tf_table = {}
+
+        count_words_in_sentence = len(f_table)
+        for word, count in f_table.items():
+            tf_table[word] = count / count_words_in_sentence
+
+        tf_matrix[sent] = tf_table
+    print(tf_matrix)
+    return tf_matrix
+
+
+Result_2 = _create_tf_matrix(Result_1)
+
+
+def _create_documents_per_words(freq_matrix):
+    word_per_doc_table = {}
+
+    for sent, f_table in freq_matrix.items():
+        for word, count in f_table.items():
+            if word in word_per_doc_table:
+                word_per_doc_table[word] += 1
+            else:
+                word_per_doc_table[word] = 1
+    print(word_per_doc_table)
+    return word_per_doc_table
+
+
+Result_3 = _create_documents_per_words(Result_2)
+
+
+def _create_idf_matrix(freq_matrix, count_doc_per_words, total_documents):
+    idf_matrix = {}
+
+    for sent, f_table in freq_matrix.items():
+        idf_table = {}
+
+        for word in f_table.keys():
+            idf_table[word] = math.log10(total_documents / float(count_doc_per_words[word]))
+
+        idf_matrix[sent] = idf_table
+    print(idf_matrix)
+    return idf_matrix
+
+
+Result_4 = _create_idf_matrix(Result_1, Result_3, total_documents)
+
+
+def _create_tf_idf_matrix(tf_matrix, idf_matrix):
+    tf_idf_matrix = {}
+
+    for (sent1, f_table1), (sent2, f_table2) in zip(tf_matrix.items(), idf_matrix.items()):
+
+        tf_idf_table = {}
+
+        for (word1, value1), (word2, value2) in zip(f_table1.items(),
+                                                    f_table2.items()):  # here, keys are the same in both the table
+            tf_idf_table[word1] = float(value1 * value2)
+
+        tf_idf_matrix[sent1] = tf_idf_table
+    print(tf_idf_matrix)
+    return tf_idf_matrix
+
+
+Result_5 = _create_tf_idf_matrix(Result_2, Result_4)
+
+
+def _score_sentences(tf_idf_matrix) -> dict:
+    """
+    score a sentence by its word's TF
+    Basic algorithm: adding the TF frequency of every non-stop word in a sentence divided by total no of words in a sentence.
+    :rtype: dict
+    """
+
+    sentenceValue = {}
+
+    for sent, f_table in tf_idf_matrix.items():
+        total_score_per_sentence = 0
+
+        count_words_in_sentence = len(f_table)
+        for word, score in f_table.items():
+            total_score_per_sentence += score
+
+        sentenceValue[sent] = total_score_per_sentence / count_words_in_sentence
+    print(sentenceValue)
+    return sentenceValue
+
+
+Result_6 = _score_sentences(Result_5)
+
+
+def _find_average_score(sentenceValue) -> float:
+    """
+    Find the average score from the sentence value dictionary
+    :rtype: int
+    """
+
+    sumValues = 0
+    for entry in sentenceValue:
+        sumValues += sentenceValue[entry]
+
+    # Average value of a sentence from original summary_text
+    average = (sumValues / len(sentenceValue))
+    print(average)
+    return average
+
+
+Result_7 = _find_average_score(Result_6)
+
+
+def _generate_summary(sentences, sentenceValue, threshold):
+    sentence_count = 0
+    summary = ''
+
+    for sentence in sentences:
+        if sentence[:15] in sentenceValue and sentenceValue[sentence[:15]] >= (threshold):
+            summary += " " + sentence
+            sentence_count += 1
+    print(summary)
+    return summary
+
+
+Result_8 = _generate_summary(sentences, Result_6, Result_7)
+print("Life is great")
