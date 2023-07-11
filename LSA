@@ -1,0 +1,117 @@
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+
+""" In this example, the generate_summary function uses the Latent Semantic Analysis (LSA) technique for text summarization. 
+    It first tokenizes the sentences, removes stopwords, and creates a TF-IDF matrix representing the sentences' term frequencies. 
+    Then, it applies dimensionality reduction using TruncatedSVD to obtain a lower-dimensional representation. 
+    Next, it calculates the cosine similarity between the first sentence and the remaining sentences to determine their importance.  
+    Finally, it selects the top N sentences with the highest similarity scores to form the summary. """
+
+""" Yes, Latent Semantic Analysis (LSA) is considered a machine learning technique. 
+    LSA is a statistical method that uses linear algebra and dimensionality reduction to analyze relationships between documents and terms within a large corpus of text. 
+    It is often used for tasks such as text classification, information retrieval, and text summarization.
+
+    In LSA, documents are represented as vectors in a high-dimensional space, and the relationships between documents and 
+    terms are captured through their cosine similarities. 
+    By applying techniques like Singular Value Decomposition (SVD) to these vector representations, 
+    LSA aims to identify latent semantic patterns and extract the underlying semantic structure of the text.
+
+    While LSA predates some of the more recent advancements in machine learning, 
+    such as deep learning and neural networks, it falls under the broader umbrella of machine learning techniques.
+    LSA leverages statistical and linear algebraic computations to uncover hidden semantic information in text data, 
+    making it a valuable tool for understanding and processing textual information. """
+
+""" Latent Semantic Analysis (LSA) is a mathematical technique used for analyzing the relationships between documents and terms in a corpus.
+    It aims to uncover latent or hidden patterns of semantic similarity and capture the underlying meaning of text data.
+    Here's a high-level overview of how LSA works:
+
+1.  Term-Document Matrix: LSA starts by constructing a term-document matrix, which represents the occurrence or
+    frequency of terms in the corpus. Rows correspond to terms, and columns correspond to documents.
+    The matrix can be binary (presence/absence of terms), term frequency (counts), or TF-IDF (weighted term frequencies).
+
+2.  Matrix Factorization: LSA applies a technique called Singular Value Decomposition (SVD) 
+    to factorize the term-document matrix into three separate matrices: U, Σ, and V. 
+    U represents the term-concept matrix, Σ is a diagonal matrix containing singular values,
+    and V represents the concept-document matrix.
+
+3.   Dimensionality Reduction: To capture the latent semantic structure, LSA reduces the dimensionality of 
+    the matrices by retaining only the top k singular values and their corresponding columns in U and V. 
+    This reduction helps to eliminate noise and focus on the most important underlying concepts.
+
+4.  Semantic Space: The reduced U matrix forms a term-concept matrix, where each term is associated 
+    with a vector representation in a lower-dimensional space. This space is called the semantic space, 
+    where terms that have similar meanings are located closer to each other.
+
+5.  Document Similarity: LSA calculates the similarity between documents based on their vector representations in the semantic space. 
+    It uses measures like cosine similarity to quantify the similarity between document vectors. 
+    Documents that have similar meanings or share common concepts will have higher similarity scores.
+
+6.  Applications: LSA can be used for various tasks, such as information retrieval, document clustering,
+    and text summarization. For example, in text summarization, LSA can identify the 
+    most representative sentences by measuring their similarity to the overall document set.
+
+    LSA provides a way to analyze and understand the relationships between terms and documents in a 
+    corpus without relying on explicit semantic annotations. 
+    It captures the latent semantic structure and enables applications that involve concept similarity and
+     information retrieval based on semantic meaning. """
+
+file_path = '\\Users\\luiss\\Desktop\\test.txt'
+open_text = open(file_path, "r", encoding='utf-8')
+text = open_text.read()
+
+def read_article(text):
+    # Split text into sentences
+    sentences = sent_tokenize(text)
+    sentence_list = [sentence for sentence in sentences if len(sentence) > 10]
+
+    return sentence_list
+
+
+def preprocess_text(sentences):
+    # Convert sentences to lowercase and tokenize words
+    tokenized_sentences = [word_tokenize(sentence.lower()) for sentence in sentences]
+
+    # Remove stopwords
+    stop_words = set(stopwords.words("english"))
+    filtered_sentences = [[word for word in sentence if word not in stop_words] for sentence in tokenized_sentences]
+
+    return filtered_sentences
+
+
+def generate_summary(text, num_sentences=5):
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
+    # Read the text and preprocess it
+    sentences = read_article(text)
+    filtered_sentences = preprocess_text(sentences)
+
+    # Create TF-IDF matrix
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform([' '.join(sentence) for sentence in filtered_sentences])
+
+    # Perform dimensionality reduction using TruncatedSVD
+    num_components = min(num_sentences, len(sentences))
+    svd = TruncatedSVD(n_components=num_components)
+    svd_matrix = svd.fit_transform(tfidf_matrix)
+
+    # Calculate sentence scores based on cosine similarity with the first sentence (highest TF-IDF)
+    sentence_scores = []
+    for i in range(len(svd_matrix)):
+        similarity = nltk.cluster.util.cosine_distance(svd_matrix[0], svd_matrix[i])
+        sentence_scores.append((i, similarity))
+
+    # Sort the sentence scores in descending order
+    sentence_scores = sorted(sentence_scores, key=lambda x: x[1], reverse=True)
+
+    # Select the top N sentences for the summary
+    summary_sentences = [sentences[idx] for idx, _ in sentence_scores[:num_sentences]]
+    summary = ' '.join(summary_sentences)
+
+    return summary
+
+summary = generate_summary(text)
+print(summary)
