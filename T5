@@ -1,0 +1,90 @@
+from transformers import T5Tokenizer, T5ForConditionalGeneration
+
+file_path = '\\Users\\luiss\\Desktop\\test.txt'
+open_text = open(file_path, "r", encoding='utf-8')
+text = open_text.read()
+
+""" The T5 (Text-to-Text Transfer Transformer) algorithm is a versatile language model developed by Google's AI research team. 
+    It is based on the Transformer architecture and 
+    is designed to perform a wide range of natural language processing (NLP) tasks using a unified text-to-text framework.
+
+    The key idea behind T5 is to frame all NLP tasks as text-to-text problems. 
+    In this framework, both the input and output are represented as text strings, 
+    allowing for a unified approach to various NLP tasks, including text classification, 
+    summarization, translation, question answering, and more.
+
+    The T5 model consists of a transformer encoder-decoder architecture, 
+    similar to the one used in the popular sequence-to-sequence model. 
+    It comprises multiple layers of self-attention mechanisms and feed-forward neural networks.
+
+    During training, T5 is trained on a large corpus of text using a variant of the transformer called "masked language modeling." 
+    In this approach, some of the tokens in the input text are randomly masked, 
+    and the model is trained to predict the original masked tokens. By learning to predict the missing tokens, 
+    T5 develops an understanding of the relationships between words and can generate coherent and contextually relevant output.
+
+    To perform a specific NLP task using T5, the input is formatted as a text string that describes the task, 
+    followed by a separator token, and then the actual input text. For example, to perform sentiment classification, 
+    the input may be: "classify sentiment: This movie is great." The model is then fine-tuned on task-specific data, 
+    optimizing its parameters to generate appropriate outputs for the given task.
+
+    T5 has gained popularity due to its versatility and strong performance across a wide range of NLP tasks. 
+    It allows for efficient transfer learning, where pre-trained models can be fine-tuned on specific downstream tasks with 
+    relatively small amounts of task-specific data.
+
+    It's important to note that the T5 model and its architecture have evolved since its initial release, 
+    and there may be variations or improvements to the original implementation. 
+    The above description provides a general overview of the working principles of the T5 algorithm. """
+
+"""
+    T5 (Text-To-Text Transfer Transformer) is a state-of-the-art language model developed by Google Research. 
+    It is a powerful model that can be fine-tuned for a wide range of natural language processing tasks, including text summarization,
+    machine translation, question answering, and more. T5 is based on the Transformer architecture, 
+    which utilizes self-attention mechanisms to capture contextual relationships in text data. 
+    Here's a high-level overview of how T5 works:
+
+1.  Pretraining: T5 is pretrained on a large corpus of text data using a masked language modeling objective. 
+    During pretraining, the model learns to predict missing or masked words within sentences based on the surrounding context. 
+    This process helps T5 to acquire a general understanding of language patterns and semantic relationships.
+
+2.  Text-To-Text Framework: T5 employs a unified "text-to-text" framework, where all NLP tasks are cast as text generation tasks. 
+    This means that input and output pairs are formatted as text strings, and the model is trained to generate the 
+    desired output text given the input text. For example, summarization can be framed as "summarize: [input text]".
+
+3.  Fine-tuning: After pretraining, T5 can be fine-tuned on specific downstream tasks. 
+    Fine-tuning involves training the model on task-specific data with the objective of optimizing performance on that task. 
+    The model is provided with input-output pairs specific to the task and is trained to generate the correct output given the input.
+
+4.  Encoder-Decoder Architecture: T5 uses an encoder-decoder architecture. 
+    The input text is encoded into a fixed-length representation called a context vector using multiple layers of self-attention and
+    feed-forward neural networks. The context vector is then decoded to generate the desired output text
+    using another set of self-attention layers and feed-forward networks.
+
+    
+5.  Attention Mechanism: T5 employs self-attention mechanisms, specifically the scaled dot-product attention,
+    which allows the model to attend to different parts of the input sequence when generating the output.
+    Attention mechanisms help the model capture dependencies between words and capture contextual information effectively.
+    
+6.  Task-Specific Head: T5 includes a task-specific head, which is a task-specific layer added on top of the model. 
+    This layer is responsible for mapping the context vector to the desired output format for the specific task, 
+    such as generating a summary or translating a sentence.
+
+    T5's strength lies in its versatility and ability to be fine-tuned for a wide range of natural language processing tasks. 
+    By pretraining on a large corpus and fine-tuning on specific tasks, T5 leverages its deep understanding of 
+    language patterns to generate accurate and contextually appropriate responses for various language-related tasks. """
+
+def generate_summary(text):
+    # Load the pre-trained T5 model and tokenizer
+    model = T5ForConditionalGeneration.from_pretrained("t5-base")
+    tokenizer = T5Tokenizer.from_pretrained("t5-base", model_max_length=512)
+    # Preprocess the text
+    preprocess_text = "summarize: " + text
+    inputs = tokenizer.encode(preprocess_text, return_tensors="pt")
+
+    # Generate the summary
+    outputs = model.generate(inputs, max_length=150, num_beams=2, early_stopping=True)
+    summary = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    return summary
+
+summary = generate_summary(text)
+print(summary)
