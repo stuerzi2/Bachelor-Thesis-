@@ -1,0 +1,81 @@
+import numpy as np
+import networkx as nx
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+""" LexRank is a graph-based algorithm for extractive text summarization. 
+    It uses the concept of centrality to rank sentences based on their importance and selects the most salient sentences for the summary. 
+    Here's how LexRank works:
+
+1.   Sentence Similarity Matrix: LexRank starts by constructing a similarity matrix based on the pairwise similarities 
+    between sentences in the text. The similarity between two sentences is typically measured using cosine similarity, which compares the vector representations of the sentences. Different similarity measures can also be used.
+
+2.  Graph Construction: The similarity matrix is then used to construct a graph, where each sentence represents a node in the graph.
+    The similarity between sentences determines the strength of the edges connecting them. 
+    Typically, a threshold is used to determine if an edge should be present between two sentences based on their similarity score.
+
+3.  Centrality Calculation: LexRank applies the PageRank algorithm on the sentence graph to calculate the centrality score for each sentence. 
+    The centrality score represents the importance of a sentence in the overall text. 
+    The PageRank algorithm, originally used for web page ranking, assigns higher scores to nodes that are connected to important nodes.
+
+4.  Sentence Ranking: After calculating the centrality scores, LexRank ranks the sentences based on their scores. 
+    The sentences with higher centrality scores are considered more important and are selected for the summary.
+
+5.  Summary Generation: Finally, the top-ranked sentences are extracted to form the summary. 
+    The number of sentences selected for the summary can be controlled based on the desired length or a predetermined summary size.
+
+    LexRank leverages the connectivity and centrality of sentences in the graph to identify the most informative and representative sentences. 
+    It assumes that sentences that are similar to many other sentences and are connected to important sentences 
+    are likely to contain key information.
+
+    By using this graph-based approach, LexRank can generate extractive summaries by selecting sentences that capture the important concepts 
+    and maintain the coherence of the original text."""
+
+def preprocess_text(text):
+    # Tokenize the text into sentences
+    sentences = text.split('. ')
+    return sentences
+
+def build_similarity_matrix(sentences, vectorizer):
+    # Transform sentences into document-term matrix
+    dt_matrix = vectorizer.fit_transform(sentences)
+    # Calculate cosine similarity matrix
+    similarity_matrix = cosine_similarity(dt_matrix, dt_matrix)
+    return similarity_matrix
+
+def lexrank(sentences, similarity_matrix, threshold=0.1, alpha=0.85, max_iter=100):
+    # Initialize the PageRank algorithm
+    pagerank = nx.pagerank(nx.from_numpy_array(similarity_matrix), alpha=alpha, max_iter=max_iter)
+
+    # Sort sentences by their PageRank scores
+    ranked_sentences = sorted(((pagerank[i], sentence) for i, sentence in enumerate(sentences)), reverse=True)
+
+    # Filter out sentences below the similarity threshold
+    ranked_sentences = [(score, sentence) for score, sentence in ranked_sentences if score > threshold]
+
+    return ranked_sentences
+
+def text_summarization(text, num_sentences=3):
+    # Preprocess the text
+    sentences = preprocess_text(text)
+
+    # Build the similarity matrix
+    vectorizer = CountVectorizer()
+    similarity_matrix = build_similarity_matrix(sentences, vectorizer)
+
+    # Apply LexRank algorithm to get the ranked sentences
+    ranked_sentences = lexrank(sentences, similarity_matrix)
+
+    # Get the top N sentences as the summary
+    summary = [sentence for _, sentence in ranked_sentences[:num_sentences]]
+
+    return ' '.join(summary)
+
+if __name__ == "__main__":
+    input_text = """
+    LexRank is a graph-based algorithm for text summarization. It uses the concept of centrality to rank sentences and select the most important ones for the summary. The algorithm has shown promising results in various applications. LexRank can be applied to both single-document and multi-document summarization tasks. It's a powerful tool for generating concise and informative summaries from large amounts of text.
+    """
+
+summary = text_summarization(input_text)
+print("Summary:")
+print(summary)
