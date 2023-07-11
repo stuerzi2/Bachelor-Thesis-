@@ -1,0 +1,132 @@
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+import numpy as np
+import networkx as nx
+
+""" In this example, the generate_summary function uses the TextRank algorithm for text summarization. 
+    It first tokenizes the sentences, removes stopwords, and builds a similarity matrix based on the Jaccard similarity between sentences. 
+    Then, it applies the PageRank algorithm from the NetworkX library to rank the sentences. 
+    Finally, it selects the top N sentences with the highest ranks to form the summary. """
+
+""" TextRank is not a machine learning algorithm but rather a graph-based algorithm for text summarization and keyword extraction. 
+    It is a purely unsupervised method that does not involve training on labeled data.
+
+    TextRank operates by treating text as a graph, where sentences or words are represented as nodes, 
+    and the relationships between them are represented as edges. 
+    It calculates the importance or centrality of each sentence or word in the text based on measures such as PageRank, 
+    inspired by Google's web page ranking algorithm.
+
+    The algorithm iteratively assigns scores to the nodes in the graph based on their connections and importance. 
+    In the case of text summarization, sentences are ranked based on their centrality within the graph, 
+    and the most important sentences are selected to form the summary.
+
+    Although TextRank does not involve machine learning techniques, 
+    it is an effective and widely used algorithm for extractive text summarization and keyword extraction. 
+    It relies on graph-based methods and network analysis to identify salient information within the text. """
+
+""" TextRank is a graph-based algorithm for extractive text summarization and keyword extraction.
+    It is inspired by the PageRank algorithm used by Google to rank web pages. 
+    TextRank applies similar principles to rank sentences or words in a text based on their importance. Here's how TextRank works:
+
+1.   Text Preprocessing: The input text is preprocessed by removing stop words, punctuation, and performing tokenization. 
+    This step prepares the text for further analysis.
+
+2.  Graph Construction: TextRank constructs a graph representation of the text, 
+    where each sentence or word is represented as a node in the graph. Typically, 
+    a sentence or word corresponds to a node in the graph.
+
+3.  Edge Weight Calculation: Edges between nodes (sentences or words) are created based on their semantic similarity. 
+    The similarity can be computed using techniques such as cosine similarity, Jaccard similarity, or other similarity measures.
+    The similarity score represents the strength of the relationship between nodes.
+
+4.  Graph Ranking: TextRank applies an iterative algorithm, similar to PageRank, to calculate the importance or centrality
+    of each node in the graph. Initially, each node is assigned an equal importance score. In each iteration, the score of each node is updated based on the scores of its connected nodes. The process continues until convergence.
+
+5.  Sentence/Word Ranking: Once the ranking algorithm converges, 
+    TextRank assigns a final importance score to each sentence or word in the graph. Higher scores indicate greater importance.
+
+    Summary Generation/Keyword Extraction: Finally, the top-ranked sentences are selected to form the summary, 
+    or the words with the highest scores are chosen as keywords. The number of sentences 
+    or words selected can be controlled based on the desired summary length or keyword count.
+
+    TextRank leverages the graph structure and connectivity between sentences or words to determine their importance. 
+    It assumes that sentences or words that are similar to many other sentences or words, 
+    or are connected to important sentences or words, are likely to be more informative and representative of the text.
+
+    TextRank has been widely used for extractive text summarization and keyword extraction tasks due to its 
+    simplicity and effectiveness in identifying important information in the text. """
+
+file_path = '\\Users\\luiss\\Desktop\\test.txt'
+open_text = open(file_path, "r", encoding='utf-8')
+text = open_text.read()
+
+def read_article(text):
+    # Split text into sentences
+    sentences = sent_tokenize(text)
+    sentence_list = [sentence for sentence in sentences if len(sentence) > 10]
+
+    return sentence_list
+
+
+def preprocess_text(sentences):
+    # Convert sentences to lowercase and tokenize words
+    tokenized_sentences = [word_tokenize(sentence.lower()) for sentence in sentences]
+
+    # Remove stopwords
+    stop_words = set(stopwords.words("english"))
+    filtered_sentences = [[word for word in sentence if word not in stop_words] for sentence in tokenized_sentences]
+
+    return filtered_sentences
+
+
+def sentence_similarity(sent1, sent2):
+    # Create a set of unique words in both sentences
+    sent1_words = set(sent1)
+    sent2_words = set(sent2)
+
+    # Compute the Jaccard similarity between the two sets
+    similarity = len(sent1_words.intersection(sent2_words)) / len(sent1_words.union(sent2_words))
+
+    return similarity
+
+
+def build_similarity_matrix(sentences):
+    # Create an empty similarity matrix
+    similarity_matrix = np.zeros((len(sentences), len(sentences)))
+
+    for i in range(len(sentences)):
+        for j in range(len(sentences)):
+            if i == j:
+                continue
+            similarity_matrix[i][j] = sentence_similarity(sentences[i], sentences[j])
+
+    return similarity_matrix
+
+
+def generate_summary(text, num_sentences=5):
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
+    # Read the text and preprocess it
+    sentences = read_article(text)
+    filtered_sentences = preprocess_text(sentences)
+
+    # Build the similarity matrix
+    similarity_matrix = build_similarity_matrix(filtered_sentences)
+
+    # Apply PageRank algorithm to get sentence rankings
+    sentence_ranks = nx.pagerank(nx.from_numpy_array(similarity_matrix))
+
+    # Sort the sentence ranks and get the top sentences
+    ranked_sentences = sorted(((sentence_ranks[i], sentences[i]) for i in range(len(sentences))), reverse=True)
+
+    # Select the top N sentences for the summary
+    summary = ""
+    for i in range(num_sentences):
+        summary += ranked_sentences[i][1] + " "
+
+    return summary
+
+summary = generate_summary(text)
+print(summary)
