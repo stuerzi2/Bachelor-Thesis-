@@ -1,0 +1,52 @@
+import openai
+
+""" ChatGPT, or Generative Pre-trained Transformer, is a language model developed by OpenAI. 
+    It uses a deep learning architecture known as a transformer, specifically the GPT-3.5 variant, 
+    to generate human-like text responses based on the given input.
+
+    The training process of ChatGPT involves exposing the model to a large amount of text data from the internet. 
+    It learns to predict the next word in a sentence based on the context of the previous words. 
+    By doing this over billions of sentences, the model learns the statistical patterns, grammar,
+    and semantic relationships present in the training data.
+
+    When you interact with ChatGPT, you provide it with a prompt or a message. 
+    The model then processes the input by tokenizing it into smaller units, such as words or subwords, 
+    and represents them as numerical vectors. These vectors are fed into the transformer architecture, 
+    which consists of multiple layers of self-attention mechanisms and feed-forward neural networks.
+
+    During the self-attention step, the model looks at the relationships between different tokens 
+    in the input sequence and assigns weights to them based on their relevance to each other. 
+    This allows the model to understand the contextual dependencies and capture long-range relationships in the text.
+
+    After processing the input through the transformer layers, 
+    the model generates a probability distribution over the possible tokens for the next word or phrase. 
+    The final output is sampled from this distribution, taking into account factors like temperature,
+    which controls the randomness of the output. The generated text is then returned as a response to the user.
+
+    It's important to note that ChatGPT does not possess true understanding or knowledge about the world. 
+    It relies solely on the patterns it learned from the training data. 
+    While it can often generate coherent and contextually appropriate responses, 
+    there are also instances where it may produce incorrect or nonsensical answers. """
+
+def summarize_text(text):
+    # Set up OpenAI API credentials
+    openai.api_key = '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'
+
+    # Provide the text to the ChatGPT model for summarization
+    response = openai.Completion.create(
+        engine='text-davinci-003',  # Use the ChatGPT model
+        prompt=text,
+        max_tokens=100,  # Set the desired length of the summary
+        temperature=0.3,  # Controls the randomness of the output
+        top_p=1.0  # Controls the diversity of the output
+    )
+
+    # Extract the generated summary from the model's response
+    summary = response.choices[0].text.strip()
+
+    return summary
+
+# Example usage
+text = '''Here is a long piece of text that you want to summarize. It can be multiple sentences or paragraphs.'''
+summary = summarize_text(text)
+print("Summary:", summary)
