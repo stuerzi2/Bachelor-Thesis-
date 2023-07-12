@@ -30,7 +30,7 @@ import openai
 
 def summarize_text(text):
     # Set up OpenAI API credentials
-    openai.api_key = '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'
+    openai.api_key = ''
 
     # Provide the text to the ChatGPT model for summarization
     response = openai.Completion.create(
